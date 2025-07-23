@@ -4159,7 +4159,6 @@
             // --- Step 1: Scan for Timeline.json and TimelinePlaceCache.json at current level (non-recursive) ---
             if (!isRecursive) {
                 for await (const entry of dirHandle.values()) {
-		    console.log("entry: " + entry)
                     if (entry.kind === 'file') {
                         if (entry.name.toLowerCase() === 'timeline.json') {
                             timelineJsonFile = entry;
