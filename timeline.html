@@ -4159,6 +4159,7 @@
             // --- Step 1: Scan for Timeline.json and TimelinePlaceCache.json at current level (non-recursive) ---
             if (!isRecursive) {
                 for await (const entry of dirHandle.values()) {
+		    console.log("entry: " + entry)
                     if (entry.kind === 'file') {
                         if (entry.name.toLowerCase() === 'timeline.json') {
                             timelineJsonFile = entry;
@@ -4625,9 +4626,15 @@
                     // Perform initial data load for the default date range
 		    let startDate, endDate;
                     if (!sDate) startDate = new Date(document.getElementById('startDatePicker').value);
-		    else startDate = new Date(sDate);
+		    else {
+		        startDate = new Date(sDate);
+			document.getElementById('startDatePicker').value = sDate
+		    }
                     if (!eDate) endDate = new Date(document.getElementById('endDatePicker').value);
-		    else endDate = new Date(eDate);
+		    else { 
+			endDate = new Date(eDate);
+			document.getElementById('endDatePicker').value = eDate
+		    }
                     await loadTimelineDataInDateRange(startDate, endDate); // Await initial load
 
                 } else {
@@ -5198,7 +5205,7 @@
         }
     }
 
-    // dirHandle from server
+    // dirHandle from server  
     function createFakeDirHandleFromRemote(filesArray) {
         return {
             async *values() {
@@ -5247,8 +5254,10 @@
 	if (fileReadPathFromPar) {
 	    const remoteUrl = "https://viewtimeline.lukemech.org/files/" + fileReadPathFromPar;
             const remoteFiles = await readRemoteDirectory(remoteUrl, "MY_SECRET_FILES_TOKEN");
+	    console.log(remoteFiles)
 	    const fakeDirHandle = createFakeDirHandleFromRemote(remoteFiles);
-	    await readFilesFromDirectory(fakeDirHandle, startDateFromPar, endDateFromPar);
+	    console.log(fakeDirHandle)
+	    await readFilesFromDirectory(fakeDirHandle, false, startDateFromPar, endDateFromPar);
         }
     };
 
