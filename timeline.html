@@ -4128,7 +4128,7 @@
     }
 
     // Reads files from the selected directory (handles Takeout structure and single Timeline.json)
-    async function readFilesFromDirectory(dirHandle, isRecursive=false) {
+    async function readFilesFromDirectory(dirHandle, isRecursive=false, sDate=null, eDate=null) {
         let timelineJsonFile = null;
         let dataSourceText = 'Unknown';
         let placeCacheFile = null;
@@ -4623,8 +4623,11 @@
                     setUIEnabled(true);
 
                     // Perform initial data load for the default date range
-                    const startDate = new Date(document.getElementById('startDatePicker').value);
-                    const endDate = new Date(document.getElementById('endDatePicker').value);
+		    let startDate, endDate;
+                    if (!sDate) startDate = new Date(document.getElementById('startDatePicker').value);
+		    else startDate = new Date(sDate);
+                    if (!eDate) endDate = new Date(document.getElementById('endDatePicker').value);
+		    else endDate = new Date(eDate);
                     await loadTimelineDataInDateRange(startDate, endDate); // Await initial load
 
                 } else {
@@ -5195,8 +5198,58 @@
         }
     }
 
-    window.onload = function() {
+    // dirHandle from server
+    function createFakeDirHandleFromRemote(filesArray) {
+        return {
+            async *values() {
+                for (const f of filesArray) {
+                    yield {
+                        kind: 'file',
+                        name: f.name,
+                        async getFile() {
+                            // Tworzymy File z JSON stringiem
+                            return new File([JSON.stringify(f.content)], f.name, { type: 'application/json' });
+                        }
+                    };
+                }
+            }
+        };
+    }
+    async function readRemoteDirectory(baseUrl, authToken) {
+        const indexRes = await fetch(`${baseUrl}?token=${authToken}`);
+        const fileList = await indexRes.json(); // np. ["plik1.json", "plik2.json"]
+
+        const files = [];
+
+        for (const filename of fileList) {
+            if (!filename.endsWith('.json')) continue;
+
+            const fileUrl = `${baseUrl}/${filename}?token=${authToken}`;
+            const res = await fetch(fileUrl);
+            const content = await res.json();
+            files.push({
+                name: filename,
+                content: content
+            });
+        }
+
+        return files;
+    }
+
+    window.onload = async function() {
         initializeApp();
+
+	const reqParams = new URLSearchParams(window.location.search);
+        const fileReadPathFromPar = reqParams.get("f");
+        const startDateFromPar = reqParams.get("sDate");
+        const endDateFromPar = reqParams.get("eDate");
+    
+	if (fileReadPathFromPar) {
+	    const remoteUrl = "https://viewtimeline.lukemech.org/files/" + fileReadPathFromPar;
+            const remoteFiles = await readRemoteDirectory(remoteUrl, "MY_SECRET_FILES_TOKEN");
+	    const fakeDirHandle = createFakeDirHandleFromRemote(remoteFiles);
+	    await readFilesFromDirectory(fakeDirHandle, startDateFromPar, endDateFromPar);
+        }
     };
 
 </script>
