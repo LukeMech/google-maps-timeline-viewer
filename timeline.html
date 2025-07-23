@@ -5242,13 +5242,23 @@
         return files;
     }
 
+    function getParamInsensitive(params, key) {
+        key = key.toLowerCase();
+        for (const [k, v] of params.entries()) {
+            if (k.toLowerCase() === key) {
+                return v;
+            }
+        }
+        return null;
+    }
+
     window.onload = async function() {
         initializeApp();
 
 	const reqParams = new URLSearchParams(window.location.search);
-        const fileReadPathFromPar = reqParams.get("f");
-        const startDateFromPar = reqParams.get("sDate");
-        const endDateFromPar = reqParams.get("eDate");
+        const fileReadPathFromPar = getParamInsensitive(reqParams, "f");
+        const startDateFromPar = getParamInsensitive(reqParams, "sDate");
+        const endDateFromPar = getParamInsensitive(reqParams, "eDate");
     
 	if (fileReadPathFromPar) {
 	    const remoteUrl = "https://viewtimeline.lukemech.org/files/" + fileReadPathFromPar;
